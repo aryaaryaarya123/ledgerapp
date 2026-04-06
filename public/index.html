@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ledger Pro Cloud — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #6366f1; --primary-glow: rgba(99, 102, 241, 0.15); --secondary: #ec4899; --accent: #f59e0b;
+            --success: #10b981; --danger: #ef4444; --info: #3b82f6; --bg: #09090b; --surface: #18181b;
+            --surface-raised: #27272a; --border: #3f3f46; --border-light: rgba(63, 63, 70, 0.5);
+            --text: #fafafa; --text-muted: #a1a1aa; --text-dim: #71717a; --input-bg: #09090b; --glass: rgba(24, 24, 27, 0.8);
+            --font-main: 'Plus Jakarta Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+            --font-serif: 'Fraunces', serif; --radius: 12px; --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        [data-theme="light"] {
+            --bg: #f8fafc; --surface: #ffffff; --surface-raised: #f1f5f9; --border: #e2e8f0;
+            --text: #0f172a; --text-muted: #64748b; --text-dim: #94a3b8; --input-bg: #f8fafc;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: var(--font-main); min-height: 100vh; line-height: 1.6; }
+        .glass-header { position: sticky; top: 0; z-index: 100; background: var(--glass); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 1rem 2rem; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .grid { display: grid; gap: 1.5rem; }
+        .flex { display: flex; align-items: center; gap: 0.75rem; }
+        .flex-between { display: flex; align-items: center; justify-content: space-between; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); transition: border-color 0.2s; }
+        .card:hover { border-color: var(--primary); }
+        .logo { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .logo span { color: var(--text-muted); font-weight: 400; font-size: 0.8rem; margin-left: 0.5rem; }
+        .stats-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 2rem; }
+        .stat-card { display: flex; flex-direction: column; gap: 0.5rem; }
+        .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); font-weight: 700; }
+        .stat-value { font-family: var(--font-serif); font-size: 1.75rem; font-weight: 700; }
+        .main-layout { display: grid; grid-template-columns: 1fr 380px; gap: 2rem; }
+        .tabs { display: flex; gap: 0.5rem; background: var(--surface-raised); padding: 0.4rem; border-radius: 10px; margin-bottom: 1.5rem; }
+        .tab-btn { flex: 1; padding: 0.6rem; border: none; background: transparent; border-radius: 8px; color: var(--text-dim); font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: 0.2s; }
+        .tab-btn.active { background: var(--surface); color: var(--primary); }
+        .search-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 1rem 0.6rem 2.5rem; color: var(--text); outline: none; }
+        .tx-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; transition: transform 0.1s; }
+        .tx-card:hover { transform: translateX(4px); border-color: var(--border-light); }
+        .tx-amount { font-family: var(--font-serif); font-size: 1rem; font-weight: 700; }
+        .amt-pos { color: var(--success); } .amt-neg { color: var(--danger); }
+        .status-badge { font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+        .status-pending { background: rgba(245, 158, 11, 0.1); color: var(--accent); border: 1px solid var(--accent); }
+        .btn { padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 0.5rem; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; } .btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--border); }
+        .form-group { margin-bottom: 1rem; } .form-group label { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.4rem; }
+        .form-group input, .form-group select { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem; color: var(--text); outline: none; }
+        #toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; }
+        .toast { background: var(--surface-raised); color: var(--text); padding: 1rem; border-radius: 10px; border-left: 4px solid var(--primary); display: flex; align-items: center; gap: 0.7rem; font-size: 0.85rem; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: white; border: 2px solid var(--surface); }
+        .settle-item { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: var(--surface-raised); border-radius: 8px; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+
+<header class="glass-header">
+    <div class="flex-between">
+        <div class="logo">Ledger Cloud <span>v3.1</span></div>
+        <div class="header-actions flex">
+            <div id="bs-date" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim);"></div>
+            <button class="btn btn-ghost" onclick="toggleTheme()" title="Toggle Theme"><i data-lucide="sun-moon"></i></button>
+            <button class="btn btn-ghost" onclick="exportData()" title="Export JSON"><i data-lucide="download"></i></button>
+            <select id="current-user" class="btn btn-ghost" style="padding: 0.4rem 0.8rem;" onchange="renderAll()">
+                <option value="Umanga Regmi">👤 Umanga</option>
+                <option value="Gaurav Laudari">👤 Gaurav</option>
+                <option value="Arya Lamsal">👤 Arya</option>
+            </select>
+            <button class="btn btn-primary" onclick="syncData()"><i data-lucide="refresh-cw"></i> Sync</button>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    <div class="grid stats-grid">
+        <div class="card stat-card">
+            <span class="stat-label">Pool Balance</span>
+            <span class="stat-value" id="stat-pool-balance">Rs 0</span>
+            <span class="stat-sub" style="font-size: 0.7rem; color: var(--text-dim);">Total Income − Approved Expenses</span>
+        </div>
+        <div class="card stat-card" style="border-left: 4px solid var(--secondary);">
+            <span class="stat-label">Monthly Spend</span>
+            <span class="stat-value" id="stat-monthly-spend">Rs 0</span>
+            <span class="stat-sub" id="stat-monthly-sub">Current BS Month</span>
+        </div>
+        <div class="card stat-card">
+            <span class="stat-label">Approval Queue</span>
+            <span class="stat-value" id="stat-pending-count">0</span>
+            <span class="stat-sub" style="color: var(--accent);">Waiting for your action</span>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="feed-section">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="setTab('all')"><i data-lucide="layout-list"></i> All</button>
+                <button class="tab-btn" onclick="setTab('pending')"><i data-lucide="clock"></i> Pending</button>
+                <button class="tab-btn" onclick="setTab('expenses')"><i data-lucide="arrow-up-right"></i> Expenses</button>
+                <button class="tab-btn" onclick="setTab('income')"><i data-lucide="arrow-down-left"></i> Income</button>
+            </div>
+            <div class="card">
+                <div class="list-header flex-between" style="margin-bottom: 1rem;">
+                    <div style="position: relative; flex: 1;">
+                        <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; color: var(--text-dim);"></i>
+                        <input type="text" class="search-input" placeholder="Search..." oninput="state.searchQuery = this.value; renderFeed()">
+                    </div>
+                </div>
+                <div id="main-feed" style="max-height: 600px; overflow-y: auto; padding-right: 0.5rem;"></div>
+            </div>
+        </div>
+
+        <div class="panel-section grid">
+            <div class="card">
+                <div class="flex" style="font-weight:700; margin-bottom:1rem;"><i data-lucide="plus-circle" color="var(--primary)"></i> Quick Record</div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="f-type" onchange="toggleFormFields()">
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
+                        <option value="debt">Manual Debt</option>
+                    </select>
+                </div>
+                <div id="form-dynamic-fields"></div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="handleSubmit()">Record</button>
+            </div>
+
+            <div class="card">
+                <div class="flex" style="font-weight:700; margin-bottom:1rem;"><i data-lucide="sparkles" color="var(--accent)"></i> Smart Settlements</div>
+                <div id="settlement-list"></div>
+            </div>
+
+            <div class="card">
+                <div class="flex" style="font-weight:700; margin-bottom:1rem;"><i data-lucide="shield-check" color="var(--success)"></i> Net Positions</div>
+                <div id="member-net-list" class="grid" style="gap: 0.75rem;"></div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="toast-container"></div>
+
+<script>
+// BS Calendar Logic
+const BS_MONTHS = ['Baisakh','Jestha','Ashadh','Shrawan','Bhadra','Ashwin','Kartik','Mangsir','Poush','Magh','Falgun','Chaitra'];
+const BS_DATA = {2000:[30,32,31,32,31,30,30,30,29,30,29,31],2001:[31,31,32,31,31,31,30,29,30,29,30,30],2002:[31,31,32,32,31,30,30,29,30,29,30,30],2003:[31,32,31,32,31,30,30,30,29,29,30,31],2004:[30,32,31,32,31,30,30,30,29,30,29,31],2005:[31,31,32,31,31,31,30,29,30,29,30,30],2006:[31,31,32,32,31,30,30,29,30,29,30,30],2007:[31,32,31,32,31,30,30,30,29,29,30,31],2008:[31,31,31,32,31,31,29,30,30,29,29,31],2009:[31,31,32,31,31,31,30,29,30,29,30,30],2010:[31,31,32,32,31,30,30,29,30,29,30,30],2011:[31,32,31,32,31,30,30,30,29,29,30,31],2012:[31,31,31,32,31,31,29,30,30,29,30,30],2013:[31,31,32,31,31,31,30,29,30,29,30,30],2014:[31,31,32,32,31,30,30,29,30,29,30,30],2015:[31,32,31,32,31,30,30,30,29,29,30,31],2016:[31,31,31,32,31,31,29,30,30,29,30,30],2017:[31,31,32,31,31,31,30,29,30,29,30,30],2018:[31,31,32,32,31,30,30,29,30,29,30,30],2019:[31,32,31,32,31,30,30,30,29,29,30,31],2020:[31,31,31,32,31,31,29,30,30,29,30,30],2021:[31,31,32,31,31,31,30,29,30,29,30,30],2022:[31,31,32,32,31,30,30,29,30,29,30,30],2023:[31,32,31,32,31,30,30,30,29,29,30,31],2024:[31,31,31,32,31,31,29,30,30,29,30,30],2025:[31,31,32,31,31,31,30,29,30,29,30,30],2026:[31,31,32,32,31,30,30,29,30,29,30,30],2027:[31,32,31,32,31,30,30,30,29,29,30,32],2028:[30,32,31,32,31,30,30,30,29,30,29,31],2029:[31,31,32,31,31,31,30,29,30,29,30,30],2030:[31,31,32,32,31,30,30,29,30,29,30,30],2031:[31,32,31,32,31,30,30,30,29,29,30,31],2032:[30,32,31,32,31,30,30,30,29,30,29,31],2033:[31,31,32,31,31,31,30,29,30,29,30,30],2034:[31,31,32,32,31,30,30,29,30,29,30,30],2035:[31,32,31,32,31,30,30,30,29,29,30,31],2036:[31,31,31,32,31,31,29,30,30,29,30,30],2037:[31,31,32,31,31,31,30,29,30,29,30,30],2038:[31,31,32,32,31,30,30,29,30,29,30,30],2039:[31,32,31,32,31,30,30,30,29,29,30,31],2040:[31,31,31,32,31,31,29,30,30,29,30,30],2041:[31,31,32,31,31,31,30,29,30,29,30,30],2042:[31,31,32,32,31,30,30,29,30,29,30,30],2043:[31,32,31,32,31,30,30,30,29,29,30,31],2044:[30,32,31,32,31,30,30,30,29,30,29,31],2082:[31,31,32,31,31,31,30,29,30,29,30,30]};
+
+function adToBS(ad) {
+    const ref = new Date(1944, 0, 1);
+    const target = new Date(ad.getFullYear(), ad.getMonth(), ad.getDate());
+    let days = Math.round((target - ref) / 86400000);
+    let y = 2000, m = 9, d = 17;
+    while (days > 0) {
+        const mdays = (BS_DATA[y] || BS_DATA[2082])[m - 1];
+        const rem = mdays - d;
+        if (days <= rem) { d += days; days = 0; }
+        else { days -= (rem + 1); d = 1; m++; if (m > 12) { m = 1; y++; } }
+    }
+    return { y, m, d };
+}
+
+let state = {
+    transactions: [],
+    activeTab: 'all',
+    searchQuery: '',
+    members: ['Arya Lamsal', 'Umanga Regmi', 'Gaurav Laudari'],
+    mShort: { 'Arya Lamsal': 'Arya', 'Umanga Regmi': 'Umanga', 'Gaurav Laudari': 'Gaurav' },
+    mCol: { 'Arya Lamsal': '#f59e0b', 'Umanga Regmi': '#14b8a6', 'Gaurav Laudari': '#a855f7' }
+};
+
+async function syncData() {
+    try {
+        const res = await fetch('/api/transactions');
+        state.transactions = await res.json();
+        renderAll();
+    } catch (err) { toast('Sync failed', 'danger'); }
+}
+
+function renderAll() {
+    renderStats();
+    renderFeed();
+    renderNetPositions();
+    renderSettlements();
+    lucide.createIcons();
+}
+
+function renderStats() {
+    const approved = state.transactions.filter(t => t.status === 'APPROVED');
+    const totalInc = approved.filter(t => t.type === 'income').reduce((s,t) => s + parseFloat(t.amount), 0);
+    const totalExp = approved.filter(t => t.type === 'expense').reduce((s,t) => s + parseFloat(t.amount), 0);
+    const pending = state.transactions.filter(t => t.status === 'PENDING_APPROVAL');
+    const user = document.getElementById('current-user').value;
+    const myPending = pending.filter(t => !t.approved_by || !t.approved_by.includes(user));
+
+    document.getElementById('stat-pool-balance').textContent = fmt(totalInc - totalExp);
+    document.getElementById('stat-pending-count').textContent = myPending.length;
+
+    const bsNow = adToBS(new Date());
+    const mSpend = approved.filter(t => {
+        if (t.type !== 'expense') return false;
+        const b = adToBS(new Date(t.date));
+        return b.y === bsNow.y && b.m === bsNow.m;
+    }).reduce((s,t) => s + parseFloat(t.amount), 0);
+    
+    document.getElementById('stat-monthly-spend').textContent = fmt(mSpend);
+    document.getElementById('stat-monthly-sub').textContent = `${BS_MONTHS[bsNow.m-1]} ${bsNow.y}`;
+    document.getElementById('bs-date').textContent = `${bsNow.d} ${BS_MONTHS[bsNow.m-1]} ${bsNow.y}`;
+}
+
+function renderFeed() {
+    const container = document.getElementById('main-feed');
+    let items = [...state.transactions];
+    const user = document.getElementById('current-user').value;
+
+    if (state.activeTab === 'pending') items = items.filter(t => t.status === 'PENDING_APPROVAL');
+    else if (state.activeTab === 'expenses') items = items.filter(t => t.type === 'expense');
+    else if (state.activeTab === 'income') items = items.filter(t => t.type === 'income');
+
+    if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        items = items.filter(t => t.name.toLowerCase().includes(q) || (t.category_source && t.category_source.toLowerCase().includes(q)));
+    }
+
+    container.innerHTML = items.map(t => {
+        const isPending = t.status === 'PENDING_APPROVAL';
+        const hasApproved = t.approved_by && t.approved_by.includes(user);
+        const needsAction = isPending && !hasApproved && (user === 'Umanga Regmi' || user === 'Gaurav Laudari');
+        const payer = t.person_payer || 'System';
+
+        return `
+            <div class="tx-card" style="${isPending ? 'border-left: 4px solid var(--accent)' : ''}">
+                <div class="flex">
+                    <div class="avatar" style="background:${state.mCol[payer] || 'var(--primary)'}">${payer[0]}</div>
+                    <div>
+                        <div style="font-weight:600; font-size:0.9rem;">${esc(t.name)}</div>
+                        <div style="font-size:0.7rem; color:var(--text-dim);">${t.date.split('T')[0]} · ${t.category_source || t.type}</div>
+                    </div>
+                </div>
+                <div class="flex">
+                    <div class="tx-amount ${t.type === 'income' ? 'amt-pos' : 'amt-neg'}">${t.type === 'income' ? '+' : '−'}${fmt(t.amount)}</div>
+                    ${needsAction ? `<button class="btn btn-primary" style="padding:4px 8px; font-size:0.7rem;" onclick="approveTx(${t.id})">Approve</button>` : ''}
+                    ${isPending && !needsAction ? `<span class="status-badge status-pending">Pending</span>` : ''}
+                    <button class="btn btn-ghost" style="padding:4px;" onclick="deleteTx(${t.id})"><i data-lucide="trash-2" style="width:14px"></i></button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    lucide.createIcons();
+}
+
+function computeNetBalances() {
+    const net = {}; state.members.forEach(m => net[m] = 0);
+    const approved = state.transactions.filter(t => t.status === 'APPROVED');
+
+    approved.forEach(t => {
+        if (t.type === 'expense' && t.split_type !== 'personal' && t.shares) {
+            state.members.forEach(m => {
+                const share = parseFloat(t.shares[m] || 0);
+                if (m === t.person_payer) {
+                    Object.entries(t.shares).forEach(([mem, amt]) => {
+                        if (mem !== t.person_payer) net[t.person_payer] += parseFloat(amt);
+                    });
+                } else {
+                    net[m] -= share;
+                }
+            });
+        } else if (t.type === 'debt') {
+            const from = t.other_person;
+            const to = t.person_payer;
+            net[to] += parseFloat(t.amount);
+            net[from] -= parseFloat(t.amount);
+        }
+    });
+    return net;
+}
+
+function renderNetPositions() {
+    const container = document.getElementById('member-net-list');
+    const net = computeNetBalances();
+
+    container.innerHTML = state.members.map(m => `
+        <div class="flex-between" style="background:var(--surface-raised); padding:0.8rem; border-radius:8px;">
+            <div class="flex"><div class="avatar" style="background:${state.mCol[m]}">${m[0]}</div><span>${state.mShort[m]}</span></div>
+            <div style="text-align:right">
+                <div style="font-weight:700; color:${net[m]>0.5?'var(--success)':(net[m]<-0.5?'var(--danger)':'var(--text-dim)')}">${net[m] !== 0 ? (net[m]>0?'+':'')+fmt(net[m]) : '—'}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderSettlements() {
+    const container = document.getElementById('settlement-list');
+    const net = computeNetBalances();
+    const creditors = []; const debtors = [];
+    state.members.forEach(m => {
+        if (net[m] > 0.5) creditors.push({ name: m, amount: net[m] });
+        if (net[m] < -0.5) debtors.push({ name: m, amount: -net[m] });
+    });
+
+    const transfers = [];
+    let ci = 0, di = 0;
+    while (ci < creditors.length && di < debtors.length) {
+        const c = creditors[ci], d = debtors[di];
+        const amt = Math.min(c.amount, d.amount);
+        if (amt > 0.5) transfers.push({ from: d.name, to: c.name, amount: Math.round(amt) });
+        c.amount -= amt; d.amount -= amt;
+        if (c.amount < 0.5) ci++; if (d.amount < 0.5) di++;
+    }
+
+    if (!transfers.length) {
+        container.innerHTML = `<div style="text-align:center; padding: 1rem; color: var(--success); font-size: 0.8rem;">✓ Settled</div>`;
+        return;
+    }
+
+    container.innerHTML = transfers.map(s => `
+        <div class="settle-item">
+            <div style="font-size:0.8rem;"><b>${state.mShort[s.from]}</b> → <b>${state.mShort[s.to]}</b></div>
+            <div style="font-weight:700;">${fmt(s.amount)}</div>
+        </div>
+    `).join('');
+}
+
+async function approveTx(id) {
+    const user = document.getElementById('current-user').value;
+    try {
+        await fetch(`/api/approve/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userName: user })
+        });
+        syncData();
+        toast('Approved!');
+    } catch (err) { toast('Failed to approve', 'danger'); }
+}
+
+async function deleteTx(id) {
+    if (confirm('Delete?')) {
+        try {
+            await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+            syncData();
+            toast('Deleted');
+        } catch (err) { toast('Failed to delete', 'danger'); }
+    }
+}
+
+async function handleSubmit() {
+    const type = document.getElementById('f-type').value;
+    const name = document.getElementById('f-name').value;
+    const amount = parseFloat(document.getElementById('f-amount').value);
+    const date = document.getElementById('f-date').value;
+    const user = document.getElementById('current-user').value;
+
+    if (!name || isNaN(amount) || !date) { toast('Fill all fields', 'danger'); return; }
+
+    const data = { id: Date.now(), type, name, amount, date };
+    if (type === 'expense') {
+        data.paidBy = user;
+        data.category = document.getElementById('f-cat').value;
+        const split = document.getElementById('f-split').value;
+        data.splitType = split;
+        if (split === 'equal3') {
+            const s = amount / 3;
+            data.shares = { 'Arya Lamsal': s, 'Umanga Regmi': s, 'Gaurav Laudari': s };
+        } else if (split === 'equal2') {
+            const other = document.getElementById('f-other').value;
+            data.shares = { [user]: amount / 2, [other]: amount / 2 };
+            data.other = other;
+        } else {
+            data.shares = { [user]: amount };
+        }
+    } else if (type === 'income') {
+        data.person = user;
+        data.source = 'Salary';
+    } else if (type === 'debt') {
+        data.from = document.getElementById('f-from').value;
+        data.to = document.getElementById('f-to').value;
+        if (data.from === data.to) { toast('Invalid users', 'danger'); return; }
+    }
+
+    try {
+        const res = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error);
+        }
+        syncData();
+        toast('Recorded!');
+    } catch (err) { toast(err.message || 'Failed to record', 'danger'); }
+}
+
+function toggleFormFields() {
+    const type = document.getElementById('f-type').value;
+    const container = document.getElementById('form-dynamic-fields');
+    const today = new Date().toISOString().split('T')[0];
+    const user = document.getElementById('current-user').value;
+
+    if (type === 'expense') {
+        container.innerHTML = `
+            <div class="form-group"><label>Description</label><input type="text" id="f-name"></div>
+            <div class="form-group"><label>Amount</label><input type="number" id="f-amount"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="f-date" value="${today}"></div>
+            <div class="form-group"><label>Category</label><select id="f-cat"><option value="Food">Food</option><option value="Rent">Rent</option><option value="Other">Other</option></select></div>
+            <div class="form-group"><label>Split</label><select id="f-split" onchange="toggleSplit()"><option value="equal3">3-way Equal</option><option value="equal2">2-way Equal</option><option value="personal">Personal</option></select></div>
+            <div id="split-extra"></div>
+        `;
+    } else if (type === 'income') {
+        container.innerHTML = `
+            <div class="form-group"><label>Description</label><input type="text" id="f-name"></div>
+            <div class="form-group"><label>Amount</label><input type="number" id="f-amount"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="f-date" value="${today}"></div>
+        `;
+    } else if (type === 'debt') {
+        container.innerHTML = `
+            <div class="form-group"><label>Description</label><input type="text" id="f-name"></div>
+            <div class="form-group"><label>Amount</label><input type="number" id="f-amount"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="f-date" value="${today}"></div>
+            <div class="form-group"><label>Who Owes</label><select id="f-from">${state.members.map(m => `<option value="${m}">${state.mShort[m]}</option>`).join('')}</select></div>
+            <div class="form-group"><label>Owes To</label><select id="f-to">${state.members.map(m => `<option value="${m}">${state.mShort[m]}</option>`).join('')}</select></div>
+        `;
+    }
+}
+
+function toggleSplit() {
+    const split = document.getElementById('f-split').value;
+    const container = document.getElementById('split-extra');
+    const user = document.getElementById('current-user').value;
+    if (split === 'equal2') {
+        container.innerHTML = `<div class="form-group"><label>With Who?</label><select id="f-other">${state.members.filter(m => m !== user).map(m => `<option value="${m}">${state.mShort[m]}</option>`).join('')}</select></div>`;
+    } else {
+        container.innerHTML = '';
+    }
+}
+
+function setTab(tab) {
+    state.activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(tab)));
+    renderFeed();
+}
+
+function toggleTheme() {
+    const root = document.documentElement;
+    const theme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', theme);
+    localStorage.setItem('ledger-theme', theme);
+}
+
+function exportData() {
+    const data = JSON.stringify(state.transactions, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ledger-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    toast('Data exported!');
+}
+
+function fmt(n) { return 'Rs ' + Math.abs(Math.round(n)).toLocaleString('en-IN'); }
+function esc(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+
+function toast(msg, type='success') {
+    const t = document.createElement('div'); t.className = 'toast'; 
+    if (type === 'danger') t.style.borderLeftColor = 'var(--danger)';
+    t.innerText = msg;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// Initialize theme
+if (localStorage.getItem('ledger-theme')) {
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('ledger-theme'));
+}
+
+toggleFormFields();
+syncData();
+</script>
+</body>
+</html>
