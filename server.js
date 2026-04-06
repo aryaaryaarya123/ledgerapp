@@ -11,12 +11,14 @@ const DB_FILE = path.join(__dirname, 'db.json');
 
 // --- DATABASE STRATEGY ---
 let db = null;
-const usePostgres = !!process.env.DATABASE_URL;
+const HARDCODED_DB_URL = 'postgresql://ledger_wvaw_user:TXprx4S69vzdHJmQ4ageu6bvwMQ11EEJ@dpg-d6vnm31r0fns73cd9k00-a/ledger_wvaw';
+const usePostgres = !!(process.env.DATABASE_URL || HARDCODED_DB_URL);
 
 if (usePostgres) {
+  const connectionString = process.env.DATABASE_URL || HARDCODED_DB_URL;
   db = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
+    connectionString: connectionString,
+    ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
   });
   console.log('Using PostgreSQL database.');
 } else {
@@ -68,8 +70,33 @@ async function initDB() {
       )
     `);
     console.log('PostgreSQL schema initialized.');
+    await seedDB();
   } catch (err) {
     console.error('Error initializing Postgres:', err);
+  }
+}
+
+async function seedDB() {
+  try {
+    const count = await db.query('SELECT COUNT(*) FROM transactions');
+    if (count.rows[0].count === '0') {
+      console.log('Seeding initial balances...');
+      const now = new Date().toISOString().split('T')[0];
+      // Insert Umanga owes Arya 2877
+      await db.query(`
+        INSERT INTO transactions (id, type, name, amount, date, person_payer, other_person, status)
+        VALUES ($1, 'debt', 'Opening Balance (Migration)', 2877, $2, 'Arya Lamsal', 'Umanga Regmi', 'APPROVED')
+      `, [Date.now(), now]);
+      
+      // Insert Gaurav owes Arya 1136
+      await db.query(`
+        INSERT INTO transactions (id, type, name, amount, date, person_payer, other_person, status)
+        VALUES ($1, 'debt', 'Opening Balance (Migration)', 1136, $2, 'Arya Lamsal', 'Gaurav Laudari', 'APPROVED')
+      `, [Date.now() + 1, now]);
+      console.log('Initial data seeded successfully.');
+    }
+  } catch (err) {
+    console.error('Error seeding database:', err);
   }
 }
 
