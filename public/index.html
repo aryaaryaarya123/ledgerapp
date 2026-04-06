@@ -180,11 +180,40 @@ async function syncData() {
 }
 
 function renderAll() {
+    renderProfiles();
     renderStats();
     renderFeed();
     renderNetPositions();
     renderSettlements();
     lucide.createIcons();
+}
+
+function renderProfiles() {
+    const container = document.getElementById('profile-bar');
+    const net = computeNetBalances();
+    const currentUser = document.getElementById('current-user').value;
+
+    container.innerHTML = state.members.map(m => {
+        const isActive = m === currentUser;
+        const val = net[m];
+        const status = val > 0.5 ? 'Is Owed' : (val < -0.5 ? 'Owes' : 'Settled');
+        const color = val > 0.5 ? 'var(--success)' : (val < -0.5 ? 'var(--danger)' : 'var(--text-dim)');
+        
+        return `
+            <div class="profile-card ${isActive ? 'active' : ''}" onclick="switchUser('${m}')">
+                <div class="avatar" style="background:${state.mCol[m]}; width: 40px; height: 40px; font-size: 1rem;">${m[0]}</div>
+                <div class="profile-info">
+                    <h3>${state.mShort[m]}</h3>
+                    <p style="color: ${color}; font-weight: 600;">${status} ${val !== 0 ? fmt(val) : ''}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function switchUser(name) {
+    document.getElementById('current-user').value = name;
+    renderAll();
 }
 
 function renderStats() {
