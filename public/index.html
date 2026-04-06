@@ -197,9 +197,16 @@ let state = {
 async function syncData() {
     try {
         const res = await fetch('/api/transactions');
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || 'Server Error');
+        }
         state.transactions = await res.json();
         renderAll();
-    } catch (err) { toast('Sync failed', 'danger'); }
+    } catch (err) { 
+        console.error(err);
+        toast('Sync failed: ' + err.message, 'danger'); 
+    }
 }
 
 function renderAll() {
