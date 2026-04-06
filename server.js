@@ -11,38 +11,64 @@ const DB_FILE = path.join(__dirname, 'db.json');
 
 // --- DATABASE STRATEGY ---
 let db = null;
-const HARDCODED_DB_URL = 'postgresql://ledger_wvaw_user:TXprx4S69vzdHJmQ4ageu6bvwMQ11EEJ@dpg-d6vnm31r0fns73cd9k00-a/ledger_wvaw';
-const usePostgres = !!(process.env.DATABASE_URL || HARDCODED_DB_URL);
+const INTERNAL_DB_URL = 'postgresql://ledger_wvaw_user:TXprx4S69vzdHJmQ4ageu6bvwMQ11EEJ@dpg-d6vnm31r0fns73cd9k00-a/ledger_wvaw';
+const EXTERNAL_DB_URL = 'postgresql://ledger_wvaw_user:TXprx4S69vzdHJmQ4ageu6bvwMQ11EEJ@d6vnm31r0fns73cd9k00-a.singapore-postgres.render.com/ledger_wvaw';
 
-if (usePostgres) {
-  const connectionString = process.env.DATABASE_URL || HARDCODED_DB_URL;
-  db = new Pool({
-    connectionString: connectionString,
-    ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
-  });
-  console.log('Using PostgreSQL database.');
-} else {
-  console.log('No DATABASE_URL found. Using local db.json for storage.');
-  if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify({ transactions: [], approvals: [] }, null, 2));
+const connectionString = process.env.DATABASE_URL || INTERNAL_DB_URL;
+
+async function tryConnect() {
+  // Try Primary (Internal/Env)
+  try {
+    const pool = new Pool({
+      connectionString: connectionString,
+      ssl: { rejectUnauthorized: false },
+      connectionTimeoutMillis: 5000
+    });
+    await pool.query('SELECT 1');
+    db = pool;
+    console.log('Connected to PostgreSQL (Primary/Internal).');
+    return true;
+  } catch (err) {
+    console.log('Internal connection failed, trying External...');
+    
+    // Try External (Local Development)
+    try {
+      const pool = new Pool({
+        connectionString: EXTERNAL_DB_URL,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 5000
+      });
+      await pool.query('SELECT 1');
+      db = pool;
+      console.log('Connected to PostgreSQL (External/Render.com).');
+      return true;
+    } catch (err2) {
+      console.error('All PostgreSQL connections failed. Falling back to db.json.');
+      return false;
+    }
   }
 }
 
-// Helper for local JSON DB
-function readLocalDB() {
-  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-}
-function writeLocalDB(data) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+let usePostgres = false;
+
+// Initialize Database Strategy
+async function init() {
+  usePostgres = await tryConnect();
+  
+  if (!usePostgres) {
+    if (!fs.existsSync(DB_FILE)) {
+      fs.writeFileSync(DB_FILE, JSON.stringify({ transactions: [], approvals: [] }, null, 2));
+    }
+  } else {
+    await initDB();
+  }
 }
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+init();
 
 // Initialize Database Schema (Postgres only)
 async function initDB() {
-  if (!usePostgres) return;
+  if (!db) return;
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS transactions (
