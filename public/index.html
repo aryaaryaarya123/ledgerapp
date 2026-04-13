@@ -35,8 +35,10 @@
     <div class="main-layout">
         <div class="feed-section">
             <div class="tabs">
-                <button class="tab-btn active" onclick="setTab('all')"><i data-lucide="layout-list"></i> All Transactions</button>
-                <button class="tab-btn" onclick="setTab('pending')"><i data-lucide="clock"></i> Pending Approval</button>
+                <button class="tab-btn active" onclick="setTab('all')"><i data-lucide="layout-list"></i> All</button>
+                <button class="tab-btn" onclick="setTab('pending')"><i data-lucide="clock"></i> Pending</button>
+                <button class="tab-btn" onclick="setTab('expenses')"><i data-lucide="arrow-up-right"></i> Expenses</button>
+                <button class="tab-btn" onclick="setTab('income')"><i data-lucide="arrow-down-left"></i> Income</button>
             </div>
             <div class="card">
                 <div class="list-header flex-between" style="margin-bottom: 1rem;">
@@ -51,10 +53,12 @@
 
         <div class="panel-section grid">
             <div class="card">
-                <div class="flex" style="font-weight:700; margin-bottom:1rem;"><i data-lucide="plus-circle" color="var(--primary)"></i> Record Debt</div>
+                <div class="flex" style="font-weight:700; margin-bottom:1rem;"><i data-lucide="plus-circle" color="var(--primary)"></i> Quick Record</div>
                 <div class="form-group">
                     <label>Type</label>
                     <select id="f-type" onchange="toggleFormFields()">
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
                         <option value="debt">Manual Debt</option>
                     </select>
                 </div>

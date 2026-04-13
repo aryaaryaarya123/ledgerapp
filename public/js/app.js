@@ -118,6 +118,8 @@ function renderFeed() {
     const user = document.getElementById('current-user').value;
 
     if (state.activeTab === 'pending') items = items.filter(t => t.status === 'PENDING_APPROVAL');
+    else if (state.activeTab === 'expenses') items = items.filter(t => t.type === 'expense');
+    else if (state.activeTab === 'income') items = items.filter(t => t.type === 'income');
 
     if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
@@ -301,7 +303,22 @@ window.toggleFormFields = function() {
     const today = new Date().toISOString().split('T')[0];
     const user = document.getElementById('current-user').value;
 
-    if (type === 'debt') {
+    if (type === 'expense') {
+        container.innerHTML = `
+            <div class="form-group"><label>Description</label><input type="text" id="f-name"></div>
+            <div class="form-group"><label>Amount</label><input type="number" id="f-amount"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="f-date" value="${today}"></div>
+            <div class="form-group"><label>Category</label><select id="f-cat"><option value="Food">Food</option><option value="Rent">Rent</option><option value="Other">Other</option></select></div>
+            <div class="form-group"><label>Split</label><select id="f-split" onchange="toggleSplit()"><option value="equal3">3-way Equal</option><option value="equal2">2-way Equal</option><option value="personal">Personal</option></select></div>
+            <div id="split-extra"></div>
+        `;
+    } else if (type === 'income') {
+        container.innerHTML = `
+            <div class="form-group"><label>Description</label><input type="text" id="f-name"></div>
+            <div class="form-group"><label>Amount</label><input type="number" id="f-amount"></div>
+            <div class="form-group"><label>Date</label><input type="date" id="f-date" value="${today}"></div>
+        `;
+    } else if (type === 'debt') {
         container.innerHTML = `
             <div class="form-group"><label>Description</label><input type="text" id="f-name"></div>
             <div class="form-group"><label>Amount</label><input type="number" id="f-amount"></div>
