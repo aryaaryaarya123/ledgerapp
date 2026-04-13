@@ -41,7 +41,6 @@ async function syncData() {
 }
 
 function renderAll() {
-    renderProfiles();
     renderStats();
     renderFeed();
     renderNetPositions();
@@ -49,25 +48,31 @@ function renderAll() {
     lucide.createIcons();
 }
 
-function renderProfiles() {
-    const container = document.getElementById('profile-bar');
-    if (!container) return; // Prevent error if container is removed temporarily
+function renderStats() {
+    const container = document.getElementById('member-cards-grid');
+    if (!container) return;
     
     const net = computeNetBalances();
-    const currentUser = document.getElementById('current-user').value;
+    const bsNow = adToBS(new Date());
+    document.getElementById('bs-date').textContent = `${bsNow.d} ${BS_MONTHS[bsNow.m-1]} ${bsNow.y}`;
 
     container.innerHTML = state.members.map(m => {
-        const isActive = m === currentUser;
         const val = net[m];
-        const status = val > 0.5 ? 'Is Owed' : (val < -0.5 ? 'Owes' : 'Settled');
         const color = val > 0.5 ? 'var(--success)' : (val < -0.5 ? 'var(--danger)' : 'var(--text-dim)');
+        const status = val > 0.5 ? 'Is Owed' : (val < -0.5 ? 'Owes' : 'Settled');
         
         return `
-            <div class="profile-card ${isActive ? 'active' : ''}" onclick="switchUser('${m}')">
-                <div class="avatar" style="background:${state.mCol[m]}; width: 40px; height: 40px; font-size: 1rem;">${m[0]}</div>
-                <div class="profile-info">
-                    <h3>${state.mShort[m]}</h3>
-                    <p style="color: ${color}; font-weight: 600;">${status} ${val !== 0 ? fmt(val) : ''}</p>
+            <div class="card stat-card" style="border-left: 4px solid ${state.mCol[m]}; cursor: pointer;" onclick="switchUser('${m}')">
+                <div class="flex">
+                    <div class="avatar" style="background:${state.mCol[m]}; width: 44px; height: 44px; font-size: 1.1rem; border: 2px solid var(--border);">${m[0]}</div>
+                    <div style="flex: 1;">
+                        <span class="stat-label" style="font-size: 0.75rem; color: var(--text-muted);">${state.mShort[m]}</span>
+                        <div class="stat-value" style="color: ${color}; font-size: 1.6rem; margin-top: -2px;">${fmt(val)}</div>
+                    </div>
+                </div>
+                <div class="flex-between" style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light);">
+                    <span style="font-size: 0.75rem; font-weight: 600; color: ${color};">${status}</span>
+                    <i data-lucide="chevron-right" style="width: 14px; color: var(--text-dim);"></i>
                 </div>
             </div>
         `;
@@ -80,26 +85,31 @@ function switchUser(name) {
 }
 
 function renderStats() {
-    const approved = state.transactions.filter(t => t.status === 'APPROVED');
-    const totalInc = approved.filter(t => t.type === 'income').reduce((s,t) => s + parseFloat(t.amount), 0);
-    const totalExp = approved.filter(t => t.type === 'expense').reduce((s,t) => s + parseFloat(t.amount), 0);
-    const pending = state.transactions.filter(t => t.status === 'PENDING_APPROVAL');
-    const user = document.getElementById('current-user').value;
-    const myPending = pending.filter(t => !t.approved_by || !t.approved_by.includes(user));
-
-    document.getElementById('stat-pool-balance').textContent = fmt(totalInc - totalExp);
-    document.getElementById('stat-pending-count').textContent = myPending.length;
-
-    const bsNow = adToBS(new Date());
-    const mSpend = approved.filter(t => {
-        if (t.type !== 'expense') return false;
-        const b = adToBS(new Date(t.date));
-        return b.y === bsNow.y && b.m === bsNow.m;
-    }).reduce((s,t) => s + parseFloat(t.amount), 0);
+    const container = document.getElementById('member-cards-grid');
+    if (!container) return;
     
-    document.getElementById('stat-monthly-spend').textContent = fmt(mSpend);
-    document.getElementById('stat-monthly-sub').textContent = `${BS_MONTHS[bsNow.m-1]} ${bsNow.y}`;
+    const net = computeNetBalances();
+    const bsNow = adToBS(new Date());
     document.getElementById('bs-date').textContent = `${bsNow.d} ${BS_MONTHS[bsNow.m-1]} ${bsNow.y}`;
+
+    container.innerHTML = state.members.map(m => {
+        const val = net[m];
+        const color = val > 0.5 ? 'var(--success)' : (val < -0.5 ? 'var(--danger)' : 'var(--text-dim)');
+        const status = val > 0.5 ? 'Is Owed' : (val < -0.5 ? 'Owes' : 'Settled');
+        
+        return `
+            <div class="card stat-card" style="border-left: 4px solid ${state.mCol[m]};">
+                <div class="flex">
+                    <div class="avatar" style="background:${state.mCol[m]}; width: 40px; height: 40px; font-size: 1rem;">${m[0]}</div>
+                    <div style="flex: 1;">
+                        <span class="stat-label">${state.mShort[m]}</span>
+                        <div class="stat-value" style="color: ${color}; font-size: 1.4rem;">${fmt(val)}</div>
+                    </div>
+                </div>
+                <span class="stat-sub" style="color: ${color}; font-weight: 600; margin-top: 0.5rem; display: block; font-size: 0.75rem;">${status}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderFeed() {
@@ -108,8 +118,6 @@ function renderFeed() {
     const user = document.getElementById('current-user').value;
 
     if (state.activeTab === 'pending') items = items.filter(t => t.status === 'PENDING_APPROVAL');
-    else if (state.activeTab === 'expenses') items = items.filter(t => t.type === 'expense');
-    else if (state.activeTab === 'income') items = items.filter(t => t.type === 'income');
 
     if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
@@ -128,7 +136,7 @@ function renderFeed() {
                     <div class="avatar" style="background:${state.mCol[payer] || 'var(--primary)'}">${payer[0]}</div>
                     <div>
                         <div style="font-weight:600; font-size:0.9rem;">${esc(t.name)}</div>
-                        <div style="font-size:0.7rem; color:var(--text-dim);">${t.date.split('T')[0]} · ${t.category_source || t.type}</div>
+                        <div style="font-size:0.7rem; color:var(--text-dim);">${t.date.split('T')[0]} · ${t.type}</div>
                     </div>
                 </div>
                 <div class="flex">
@@ -293,22 +301,7 @@ window.toggleFormFields = function() {
     const today = new Date().toISOString().split('T')[0];
     const user = document.getElementById('current-user').value;
 
-    if (type === 'expense') {
-        container.innerHTML = `
-            <div class="form-group"><label>Description</label><input type="text" id="f-name"></div>
-            <div class="form-group"><label>Amount</label><input type="number" id="f-amount"></div>
-            <div class="form-group"><label>Date</label><input type="date" id="f-date" value="${today}"></div>
-            <div class="form-group"><label>Category</label><select id="f-cat"><option value="Food">Food</option><option value="Rent">Rent</option><option value="Other">Other</option></select></div>
-            <div class="form-group"><label>Split</label><select id="f-split" onchange="toggleSplit()"><option value="equal3">3-way Equal</option><option value="equal2">2-way Equal</option><option value="personal">Personal</option></select></div>
-            <div id="split-extra"></div>
-        `;
-    } else if (type === 'income') {
-        container.innerHTML = `
-            <div class="form-group"><label>Description</label><input type="text" id="f-name"></div>
-            <div class="form-group"><label>Amount</label><input type="number" id="f-amount"></div>
-            <div class="form-group"><label>Date</label><input type="date" id="f-date" value="${today}"></div>
-        `;
-    } else if (type === 'debt') {
+    if (type === 'debt') {
         container.innerHTML = `
             <div class="form-group"><label>Description</label><input type="text" id="f-name"></div>
             <div class="form-group"><label>Amount</label><input type="number" id="f-amount"></div>

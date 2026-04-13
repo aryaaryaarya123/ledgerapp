@@ -28,37 +28,21 @@
 </header>
 
 <main class="container">
-    <div class="grid stats-grid">
-        <div class="card stat-card">
-            <span class="stat-label">Pool Balance</span>
-            <span class="stat-value" id="stat-pool-balance">Rs 0</span>
-            <span class="stat-sub" style="font-size: 0.7rem; color: var(--text-dim);">Total Income − Approved Expenses</span>
-        </div>
-        <div class="card stat-card" style="border-left: 4px solid var(--secondary);">
-            <span class="stat-label">Monthly Spend</span>
-            <span class="stat-value" id="stat-monthly-spend">Rs 0</span>
-            <span class="stat-sub" id="stat-monthly-sub">Current BS Month</span>
-        </div>
-        <div class="card stat-card">
-            <span class="stat-label">Approval Queue</span>
-            <span class="stat-value" id="stat-pending-count">0</span>
-            <span class="stat-sub" style="color: var(--accent);">Waiting for your action</span>
-        </div>
+    <div class="grid stats-grid" id="member-cards-grid">
+        <!-- Dynamically rendered member cards -->
     </div>
 
     <div class="main-layout">
         <div class="feed-section">
             <div class="tabs">
-                <button class="tab-btn active" onclick="setTab('all')"><i data-lucide="layout-list"></i> All</button>
-                <button class="tab-btn" onclick="setTab('pending')"><i data-lucide="clock"></i> Pending</button>
-                <button class="tab-btn" onclick="setTab('expenses')"><i data-lucide="arrow-up-right"></i> Expenses</button>
-                <button class="tab-btn" onclick="setTab('income')"><i data-lucide="arrow-down-left"></i> Income</button>
+                <button class="tab-btn active" onclick="setTab('all')"><i data-lucide="layout-list"></i> All Transactions</button>
+                <button class="tab-btn" onclick="setTab('pending')"><i data-lucide="clock"></i> Pending Approval</button>
             </div>
             <div class="card">
                 <div class="list-header flex-between" style="margin-bottom: 1rem;">
                     <div style="position: relative; flex: 1;">
                         <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; color: var(--text-dim);"></i>
-                        <input type="text" class="search-input" placeholder="Search..." oninput="state.searchQuery = this.value; renderFeed()">
+                        <input type="text" class="search-input" placeholder="Search transactions..." oninput="state.searchQuery = this.value; renderFeed()">
                     </div>
                 </div>
                 <div id="main-feed" style="max-height: 600px; overflow-y: auto; padding-right: 0.5rem;"></div>
@@ -67,12 +51,10 @@
 
         <div class="panel-section grid">
             <div class="card">
-                <div class="flex" style="font-weight:700; margin-bottom:1rem;"><i data-lucide="plus-circle" color="var(--primary)"></i> Quick Record</div>
+                <div class="flex" style="font-weight:700; margin-bottom:1rem;"><i data-lucide="plus-circle" color="var(--primary)"></i> Record Debt</div>
                 <div class="form-group">
                     <label>Type</label>
                     <select id="f-type" onchange="toggleFormFields()">
-                        <option value="expense">Expense</option>
-                        <option value="income">Income</option>
                         <option value="debt">Manual Debt</option>
                     </select>
                 </div>
